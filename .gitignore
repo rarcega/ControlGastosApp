@@ -1,0 +1,32 @@
+# Built files
+/build
+/composeApp/build
+/composeApp/out
+/composeApp/jvm
+
+# Gradle
+/.gradle
+/gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+/.idea
+*.iml
+*.ipr
+*.iws
+/local.properties
+
+# Kotlin
+.kotlin
+
+# Room
+/composeApp/schemas
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
