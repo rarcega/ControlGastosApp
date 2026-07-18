@@ -42,6 +42,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.Clock
 import com.rarcega.controlgastos.domain.model.Category
 import com.rarcega.controlgastos.domain.model.PaymentMethod
 import com.rarcega.controlgastos.domain.model.Transaction
@@ -203,7 +206,7 @@ fun TransactionCard(
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "%.2f €".format(transaction.amount),
+                    text = "${transaction.amount} €",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = when (transaction.type) {

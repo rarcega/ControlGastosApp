@@ -5,6 +5,8 @@ import com.rarcega.controlgastos.data.local.CategoryDao
 import com.rarcega.controlgastos.data.local.TransactionDao
 import com.rarcega.controlgastos.data.local.AccountDao
 import com.rarcega.controlgastos.data.local.BudgetDao
+import com.rarcega.controlgastos.data.local.createDatabase
+import com.rarcega.controlgastos.data.local.getDatabaseBuilder
 import com.rarcega.controlgastos.data.remote.NordigenApi
 import com.rarcega.controlgastos.data.repository.CategoryRepositoryImpl
 import com.rarcega.controlgastos.data.repository.TransactionRepositoryImpl
@@ -26,7 +28,9 @@ import org.koin.dsl.module
 
 val appModule = module {
     // Database
-    single { AppDatabase.create(get()) }
+    single { 
+        createDatabase(getDatabaseBuilder())
+    }
     single<CategoryDao> { get<AppDatabase>().categoryDao() }
     single<TransactionDao> { get<AppDatabase>().transactionDao() }
     single<AccountDao> { get<AppDatabase>().accountDao() }

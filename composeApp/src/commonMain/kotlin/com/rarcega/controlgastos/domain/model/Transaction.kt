@@ -3,12 +3,12 @@ package com.rarcega.controlgastos.domain.model
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 
-enum class TransactionType {
-    INCOME,
-    EXPENSE_VARIABLE,
-    EXPENSE_CASH,
-    EXPENSE_FIXED,
-    SAVING
+enum class TransactionType(val displayName: String) {
+    INCOME("Ingreso"),
+    EXPENSE_VARIABLE("Gasto Variable"),
+    EXPENSE_CASH("Gasto Efectivo"),
+    EXPENSE_FIXED("Gasto Fijo"),
+    SAVING("Ahorro")
 }
 
 enum class PaymentMethod {

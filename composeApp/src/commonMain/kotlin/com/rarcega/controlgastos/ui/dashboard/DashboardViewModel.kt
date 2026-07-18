@@ -1,8 +1,6 @@
 package com.rarcega.controlgastos.ui.dashboard
 
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rarcega.controlgastos.domain.model.MonthlySummary
@@ -51,18 +49,16 @@ class DashboardViewModel(
                 val month = _currentMonth.value
                 val year = _currentYear.value
 
-                // Collect all data
-                combine(
+                val totalsFlow = combine(
                     transactionRepository.getTotalByTypeAndMonth(TransactionType.INCOME, month, year),
                     transactionRepository.getTotalByTypeAndMonth(TransactionType.SAVING, month, year),
                     transactionRepository.getTotalByTypeAndMonth(TransactionType.EXPENSE_FIXED, month, year),
                     transactionRepository.getTotalByTypeAndMonth(TransactionType.EXPENSE_VARIABLE, month, year),
-                    transactionRepository.getTotalByTypeAndMonth(TransactionType.EXPENSE_CASH, month, year),
-                    transactionRepository.getTransactionsByMonth(month, year)
-                ) { income, savings, fixedExpenses, variableExpenses, cashExpenses, transactions ->
+                    transactionRepository.getTotalByTypeAndMonth(TransactionType.EXPENSE_CASH, month, year)
+                ) { income, savings, fixedExpenses, variableExpenses, cashExpenses ->
                     val totalSpent = fixedExpenses + variableExpenses + cashExpenses
-                    val initialBalance = 12.99 // TODO: Get from previous month
-                    val expenseLimit = 1500.0 // TODO: Get from budget
+                    val initialBalance = 12.99
+                    val expenseLimit = 1500.0
                     val finalBalance = initialBalance + income - totalSpent - savings
                     val benefit = income - totalSpent
                     val benefitPlusSavings = benefit + savings
@@ -86,20 +82,19 @@ class DashboardViewModel(
                         availableMargin = availableMargin,
                         variableExpensePercentage = variablePercentage
                     )
-                }.collect { newSummary ->
+                }
+
+                combine(
+                    totalsFlow,
+                    transactionRepository.getTransactionsByMonth(month, year)
+                ) { summary, transactions ->
+                    summary to transactions
+                }.collect { (newSummary, transactions) ->
                     _summary.value = newSummary
-                    _recentTransactions.value = transactionRepository.getTransactionsByMonth(
-                        _currentMonth.value,
-                        _currentYear.value
-                    ).let { flow ->
-                        var transactions = emptyList<Transaction>()
-                        flow.collect { transactions = it }
-                        transactions
-                    }.take(10)
+                    _recentTransactions.value = transactions.take(10)
+                    _isLoading.value = false
                 }
             } catch (e: Exception) {
-                // Handle error
-            } finally {
                 _isLoading.value = false
             }
         }

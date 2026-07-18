@@ -1,12 +1,13 @@
+@file:kotlin.jvm.JvmName("DesktopDatabaseFactory")
 package com.rarcega.controlgastos.data.local
 
-import android.content.Context
 import androidx.room.Room
+import androidx.room.RoomDatabase
+import java.io.File
 
-actual fun createDatabase(context: Context): AppDatabase {
-    return Room.databaseBuilder(
-        context,
-        AppDatabase::class.java,
-        "controlgastos.db"
-    ).build()
+actual fun getDatabaseBuilder(): RoomDatabase.Builder<AppDatabase> {
+    val dbFile = File(System.getProperty("java.io.tmpdir"), "controlgastos.db")
+    return Room.databaseBuilder<AppDatabase>(
+        name = dbFile.absolutePath,
+    )
 }

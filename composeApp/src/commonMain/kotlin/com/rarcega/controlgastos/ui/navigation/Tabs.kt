@@ -1,10 +1,10 @@
 package com.rarcega.controlgastos.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -17,8 +17,6 @@ import com.rarcega.controlgastos.ui.budget.BudgetScreen
 import com.rarcega.controlgastos.ui.settings.SettingsScreen
 
 object DashboardTab : Tab {
-    private fun readResolve(): Any = DashboardTab
-
     override val options: TabOptions
         @Composable
         get() {
@@ -37,12 +35,10 @@ object DashboardTab : Tab {
 }
 
 object TransactionsTab : Tab {
-    private fun readResolve(): Any = TransactionsTab
-
     override val options: TabOptions
         @Composable
         get() {
-            val icon = rememberVectorPainter(Icons.Default.ListAlt)
+            val icon = rememberVectorPainter(Icons.AutoMirrored.Filled.ListAlt)
             return TabOptions(
                 index = 1u,
                 title = "Movimientos",
@@ -57,8 +53,6 @@ object TransactionsTab : Tab {
 }
 
 object AccountsTab : Tab {
-    private fun readResolve(): Any = AccountsTab
-
     override val options: TabOptions
         @Composable
         get() {
@@ -77,8 +71,6 @@ object AccountsTab : Tab {
 }
 
 object BudgetTab : Tab {
-    private fun readResolve(): Any = BudgetTab
-
     override val options: TabOptions
         @Composable
         get() {
@@ -97,8 +89,6 @@ object BudgetTab : Tab {
 }
 
 object SettingsTab : Tab {
-    private fun readResolve(): Any = SettingsTab
-
     override val options: TabOptions
         @Composable
         get() {

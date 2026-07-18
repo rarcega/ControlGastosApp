@@ -1,0 +1,7 @@
+- [x] Fix `settings.gradle.kts` syntax
+- [x] Fix Room plugin ID in `build.gradle.kts` files
+- [ ] Update dependency versions (Voyager, Koin, Room)
+- [ ] Fix Room SQLite artifact name
+- [ ] Restore/Fix AGP version to 8.7.3
+- [ ] Inform user about missing `gradlew` and Windows syntax
+- [ ] Verify Gradle Sync

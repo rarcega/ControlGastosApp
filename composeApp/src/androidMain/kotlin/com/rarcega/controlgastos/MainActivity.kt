@@ -1,7 +1,7 @@
 package com.rarcega.controlgastos
 
 import android.app.Application
-import android.content.Context
+import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize

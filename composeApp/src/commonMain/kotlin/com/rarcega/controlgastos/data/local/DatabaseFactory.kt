@@ -1,6 +1,14 @@
+@file:kotlin.jvm.JvmName("CommonDatabaseFactory")
 package com.rarcega.controlgastos.data.local
 
-import android.content.Context
-import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 
-expect fun createDatabase(context: Context): AppDatabase
+expect fun getDatabaseBuilder(): RoomDatabase.Builder<AppDatabase>
+
+fun createDatabase(builder: RoomDatabase.Builder<AppDatabase>): AppDatabase {
+    return builder
+        .setDriver(BundledSQLiteDriver())
+        .fallbackToDestructiveMigration(true)
+        .build()
+}

@@ -1,12 +1,28 @@
 package com.rarcega.controlgastos.data.local
 
-import android.content.Context
 import androidx.room.Room
+import androidx.room.RoomDatabase
+import platform.Foundation.NSDocumentDirectory
+import platform.Foundation.NSFileManager
+import platform.Foundation.NSUserDomainMask
+import kotlinx.cinterop.ExperimentalForeignApi
 
-actual fun createDatabase(context: Context): AppDatabase {
-    return Room.databaseBuilder(
-        context,
-        AppDatabase::class.java,
-        "controlgastos.db"
-    ).build()
+actual fun getDatabaseBuilder(): RoomDatabase.Builder<AppDatabase> {
+    val dbFilePath = documentDirectory() + "/controlgastos.db"
+    return Room.databaseBuilder<AppDatabase>(
+        name = dbFilePath,
+        factory = { AppDatabaseConstructor.initialize() }
+    )
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun documentDirectory(): String {
+    val documentDirectory = NSFileManager.defaultManager.URLForDirectory(
+        directory = NSDocumentDirectory,
+        inDomain = NSUserDomainMask,
+        appropriateForURL = null,
+        create = false,
+        error = null,
+    )
+    return requireNotNull(documentDirectory?.path)
 }
