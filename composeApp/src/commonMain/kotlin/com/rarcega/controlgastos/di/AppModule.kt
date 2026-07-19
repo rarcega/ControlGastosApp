@@ -5,6 +5,7 @@ import com.rarcega.controlgastos.data.local.CategoryDao
 import com.rarcega.controlgastos.data.local.TransactionDao
 import com.rarcega.controlgastos.data.local.AccountDao
 import com.rarcega.controlgastos.data.local.BudgetDao
+import com.rarcega.controlgastos.data.local.MonthlyConfigDao
 import com.rarcega.controlgastos.data.local.createDatabase
 import com.rarcega.controlgastos.data.local.getDatabaseBuilder
 import com.rarcega.controlgastos.data.remote.NordigenApi
@@ -35,6 +36,7 @@ val appModule = module {
     single<TransactionDao> { get<AppDatabase>().transactionDao() }
     single<AccountDao> { get<AppDatabase>().accountDao() }
     single<BudgetDao> { get<AppDatabase>().budgetDao() }
+    single<MonthlyConfigDao> { get<AppDatabase>().monthlyConfigDao() }
 
     // HTTP Client
     single {
@@ -59,7 +61,7 @@ val appModule = module {
     single<BudgetRepository> { BudgetRepositoryImpl(get()) }
 
     // ViewModels
-    single { DashboardViewModel(get(), get(), get()) }
+    single { DashboardViewModel(get(), get(), get(), get()) }
     single { TransactionsViewModel(get(), get()) }
     single { AccountsViewModel(get()) }
     single { BudgetViewModel(get(), get()) }

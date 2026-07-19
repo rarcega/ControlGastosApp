@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FilterList
@@ -42,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.Clock
@@ -263,20 +265,21 @@ fun AddTransactionDialog(
                 // Type selector
                 Text("Tipo:", style = MaterialTheme.typography.bodyMedium)
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     TransactionType.entries.forEach { type ->
+                        val isSelected = selectedType == type
                         TextButton(
                             onClick = { selectedType = type },
-                            colors = if (selectedType == type) {
-                                ButtonDefaults.textButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
-                            } else {
-                                ButtonDefaults.textButtonColors()
-                            }
+                            colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                                containerColor = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Text(type.displayName)
+                            Text(type.displayName, maxLines = 1, fontSize = 11.sp)
                         }
                     }
                 }
@@ -284,20 +287,21 @@ fun AddTransactionDialog(
                 // Payment method selector
                 Text("Método de pago:", style = MaterialTheme.typography.bodyMedium)
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     PaymentMethod.entries.forEach { method ->
+                        val isSelected = selectedPaymentMethod == method
                         TextButton(
                             onClick = { selectedPaymentMethod = method },
-                            colors = if (selectedPaymentMethod == method) {
-                                ButtonDefaults.textButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
-                            } else {
-                                ButtonDefaults.textButtonColors()
-                            }
+                            colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                                containerColor = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                contentColor = if (isSelected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Text(method.name)
+                            Text(method.displayName, maxLines = 1, fontSize = 11.sp)
                         }
                     }
                 }
@@ -353,14 +357,5 @@ fun AddTransactionDialog(
                 Text("Cancelar")
             }
         }
-    )
-}
-
-private object ButtonDefaults {
-    @Composable
-    fun textButtonColors(
-        containerColor: Color = Color.Transparent
-    ) = androidx.compose.material3.ButtonDefaults.textButtonColors(
-        containerColor = containerColor
     )
 }

@@ -1,6 +1,7 @@
 package com.rarcega.controlgastos.ui.dashboard
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,34 +12,50 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rarcega.controlgastos.domain.model.MonthlySummary
+import com.rarcega.controlgastos.domain.model.Transaction
+import com.rarcega.controlgastos.domain.model.TransactionType
 import com.rarcega.controlgastos.ui.theme.ColorNegative
 import com.rarcega.controlgastos.ui.theme.ColorPositive
 import com.rarcega.controlgastos.ui.theme.ColorWarning
@@ -52,6 +69,11 @@ fun DashboardScreen(
     val summary by viewModel.summary.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val recentTransactions by viewModel.recentTransactions.collectAsState()
+    val fixedExpenses by viewModel.fixedExpenses.collectAsState()
+
+    var showEditInitialBalance by remember { mutableStateOf(false) }
+    var showEditExpenseLimit by remember { mutableStateOf(false) }
+    var showEditFixedExpenses by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -76,10 +98,10 @@ fun DashboardScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 16.dp)
             ) {
-                // Month Selector
                 item {
                     MonthSelector(
                         month = summary.month,
@@ -89,39 +111,72 @@ fun DashboardScreen(
                     )
                 }
 
-                // Summary Card
                 item {
-                    SummaryCard(summary = summary)
+                    SummaryCard(
+                        summary = summary,
+                        onEditInitialBalance = { showEditInitialBalance = true },
+                        onEditExpenseLimit = { showEditExpenseLimit = true }
+                    )
                 }
 
-                // Expense Breakdown
                 item {
                     ExpenseBreakdownCard(summary = summary)
                 }
 
-                // Category Summary
                 item {
-                    CategorySummaryCard(
-                        summary = summary,
-                        transactions = recentTransactions
+                    FixedExpensesCard(
+                        fixedExpenses = fixedExpenses,
+                        onEditClick = { showEditFixedExpenses = true }
                     )
                 }
 
-                // Recent Transactions
-                item {
-                    Text(
-                        text = "Últimos Movimientos",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                items(recentTransactions) { transaction ->
-                    TransactionItem(transaction = transaction)
+                if (recentTransactions.isNotEmpty()) {
+                    item {
+                        SectionHeader("Últimos Movimientos")
+                    }
+                    items(recentTransactions) { transaction ->
+                        TransactionItem(transaction = transaction)
+                    }
                 }
             }
         }
     }
+
+    if (showEditInitialBalance) {
+        EditAmountDialog(
+            title = "Editar Saldo Inicial",
+            currentAmount = summary.initialBalance,
+            onConfirm = { viewModel.updateInitialBalance(it) },
+            onDismiss = { showEditInitialBalance = false }
+        )
+    }
+
+    if (showEditExpenseLimit) {
+        EditAmountDialog(
+            title = "Editar Gasto Límite",
+            currentAmount = summary.expenseLimit,
+            onConfirm = { viewModel.updateExpenseLimit(it) },
+            onDismiss = { showEditExpenseLimit = false }
+        )
+    }
+
+    if (showEditFixedExpenses) {
+        FixedExpensesDialog(
+            fixedExpenses = fixedExpenses,
+            viewModel = viewModel,
+            onDismiss = { showEditFixedExpenses = false }
+        )
+    }
+}
+
+@Composable
+fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(top = 4.dp)
+    )
 }
 
 @Composable
@@ -136,61 +191,126 @@ fun MonthSelector(
         "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
     )
 
-    Row(
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        shape = RoundedCornerShape(12.dp)
     ) {
-        IconButton(onClick = onPreviousMonth) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Mes anterior")
-        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onPreviousMonth) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Mes anterior",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
 
-        Text(
-            text = "${monthNames[month - 1]} $year",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
+            Text(
+                text = "${monthNames[month - 1]} $year",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
 
-        IconButton(onClick = onNextMonth) {
-            Icon(Icons.Default.ArrowForward, contentDescription = "Mes siguiente")
+            IconButton(onClick = onNextMonth) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = "Mes siguiente",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
         }
     }
 }
 
 @Composable
-fun SummaryCard(summary: MonthlySummary) {
+fun SummaryCard(
+    summary: MonthlySummary,
+    onEditInitialBalance: () -> Unit,
+    onEditExpenseLimit: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "Resumen del Mes",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            SummaryRow("Saldo Inicial", summary.initialBalance)
+            EditableSummaryRow("Saldo Inicial", summary.initialBalance, onEditInitialBalance)
             SummaryRow("Nómina + Ingresos", summary.income, ColorPositive)
-            SummaryRow("Ahorro", summary.savings)
-            SummaryRow("Gasto Límite", summary.expenseLimit, ColorWarning)
+            SummaryRow("Ahorro", summary.savings, MaterialTheme.colorScheme.tertiary)
+            EditableSummaryRow("Gasto Límite", summary.expenseLimit, onEditExpenseLimit, ColorWarning)
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
             SummaryRow("Gastos Fijos", summary.fixedExpenses)
             SummaryRow("Gastos Variables", summary.variableExpenses)
             SummaryRow("Total Gastado", summary.totalSpent, ColorNegative)
 
-            Spacer(modifier = Modifier.height(8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
             SummaryRow("Saldo Final", summary.finalBalance, if (summary.finalBalance >= 0) ColorPositive else ColorNegative)
             SummaryRow("Beneficio", summary.benefit, if (summary.benefit >= 0) ColorPositive else ColorNegative)
-            SummaryRow("Beneficio + Ahorro", summary.benefitPlusSavings)
+            SummaryRow("Beneficio + Ahorro", summary.benefitPlusSavings, MaterialTheme.colorScheme.tertiary)
             SummaryRow("Margen Disponible", summary.availableMargin, if (summary.availableMargin >= 0) ColorPositive else ColorNegative)
         }
+    }
+}
+
+@Composable
+fun EditableSummaryRow(
+    label: String,
+    amount: Double,
+    onEdit: () -> Unit,
+    color: Color = MaterialTheme.colorScheme.onSurface
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Icon(
+                Icons.Default.Edit,
+                contentDescription = "Editar",
+                modifier = Modifier
+                    .size(16.dp)
+                    .clickable { onEdit() },
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+            )
+        }
+        Text(
+            text = "%.2f €".format(amount),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
     }
 }
 
@@ -223,17 +343,18 @@ fun SummaryRow(
 fun ExpenseBreakdownCard(summary: MonthlySummary) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = "Desglose de Gastos",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -261,23 +382,18 @@ fun ExpenseBreakdownCard(summary: MonthlySummary) {
 }
 
 @Composable
-fun ExpenseItem(
-    label: String,
-    amount: Double,
-    color: Color
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+fun ExpenseItem(label: String, amount: Double, color: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier
-                .size(60.dp)
-                .background(color.copy(alpha = 0.2f), RoundedCornerShape(8.dp)),
+                .size(64.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(color.copy(alpha = 0.15f)),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "%.0f€".format(amount),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = color
             )
@@ -292,92 +408,96 @@ fun ExpenseItem(
 }
 
 @Composable
-fun CategorySummaryCard(
-    summary: MonthlySummary,
-    transactions: List<com.rarcega.controlgastos.domain.model.Transaction>
+fun FixedExpensesCard(
+    fixedExpenses: List<Transaction>,
+    onEditClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Resumen por Categoría",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            val categoryTotals = transactions
-                .groupBy { it.categoryName }
-                .map { (category, txs) ->
-                    category to txs.sumOf { it.amount }
-                }
-                .sortedByDescending { it.second }
-
-            if (categoryTotals.isEmpty()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = "No hay gastos este mes",
+                    text = "Gastos Fijos",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                TextButton(onClick = onEditClick) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Editar")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (fixedExpenses.isEmpty()) {
+                Text(
+                    text = "No hay gastos fijos configurados",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
             } else {
-                categoryTotals.forEach { (category, total) ->
+                val total = fixedExpenses.sumOf { it.amount }
+                fixedExpenses.take(5).forEach { expense ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp),
+                            .padding(vertical = 3.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = category,
-                            style = MaterialTheme.typography.bodyMedium
+                            text = expense.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "%.2f €".format(total),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
+                            text = "%.2f €".format(expense.amount),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                if (fixedExpenses.size > 5) {
                     Text(
-                        text = "TOTAL",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "%.2f €".format(summary.totalSpent),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        text = "... y ${fixedExpenses.size - 5} más",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                SummaryRow("Total Gastos Fijos", total, MaterialTheme.colorScheme.primary)
             }
         }
     }
 }
 
 @Composable
-fun TransactionItem(transaction: com.rarcega.controlgastos.domain.model.Transaction) {
+fun TransactionItem(transaction: Transaction) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
-        )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Row(
             modifier = Modifier
@@ -386,7 +506,7 @@ fun TransactionItem(transaction: com.rarcega.controlgastos.domain.model.Transact
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = transaction.description,
                     style = MaterialTheme.typography.bodyMedium,
@@ -404,10 +524,247 @@ fun TransactionItem(transaction: com.rarcega.controlgastos.domain.model.Transact
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 color = when (transaction.type) {
-                    com.rarcega.controlgastos.domain.model.TransactionType.INCOME -> ColorPositive
+                    TransactionType.INCOME -> ColorPositive
                     else -> ColorNegative
                 }
             )
         }
     }
+}
+
+@Composable
+fun EditAmountDialog(
+    title: String,
+    currentAmount: Double,
+    onConfirm: (Double) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var amount by remember { mutableStateOf(if (currentAmount == 0.0) "" else "%.2f".format(currentAmount)) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            OutlinedTextField(
+                value = amount,
+                onValueChange = { amount = it },
+                label = { Text("Importe (€)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val parsed = amount.replace(",", ".").toDoubleOrNull() ?: 0.0
+                onConfirm(parsed)
+                onDismiss()
+            }) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+fun FixedExpensesDialog(
+    fixedExpenses: List<Transaction>,
+    viewModel: DashboardViewModel,
+    onDismiss: () -> Unit
+) {
+    var showAddDialog by remember { mutableStateOf(false) }
+    var editingExpense by remember { mutableStateOf<Transaction?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Gastos Fijos") },
+        text = {
+            Column {
+                fixedExpenses.forEach { expense ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = expense.description,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "%.2f €".format(expense.amount),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Row {
+                            IconButton(
+                                onClick = { editingExpense = expense },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(Icons.Default.Edit, contentDescription = "Editar", modifier = Modifier.size(18.dp))
+                            }
+                            IconButton(
+                                onClick = { viewModel.deleteFixedExpense(expense) },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = "Eliminar",
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                    HorizontalDivider()
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TextButton(
+                    onClick = { showAddDialog = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Agregar gasto fijo")
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        }
+    )
+
+    if (showAddDialog) {
+        AddFixedExpenseDialog(
+            onConfirm = { description, amount ->
+                viewModel.addFixedExpense(description, amount)
+                showAddDialog = false
+            },
+            onDismiss = { showAddDialog = false }
+        )
+    }
+
+    editingExpense?.let { expense ->
+        EditFixedExpenseDialog(
+            expense = expense,
+            onConfirm = { newDescription, newAmount ->
+                viewModel.updateFixedExpenseDescription(expense, newDescription)
+                viewModel.updateFixedExpenseAmount(expense, newAmount)
+                editingExpense = null
+            },
+            onDismiss = { editingExpense = null }
+        )
+    }
+}
+
+@Composable
+fun AddFixedExpenseDialog(
+    onConfirm: (String, Double) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var description by remember { mutableStateOf("") }
+    var amount by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Agregar Gasto Fijo") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Descripción") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("Importe (€)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val parsed = amount.replace(",", ".").toDoubleOrNull() ?: 0.0
+                    if (description.isNotBlank()) {
+                        onConfirm(description, parsed)
+                    }
+                }
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+fun EditFixedExpenseDialog(
+    expense: Transaction,
+    onConfirm: (String, Double) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var description by remember { mutableStateOf(expense.description) }
+    var amount by remember { mutableStateOf("%.2f".format(expense.amount)) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Editar Gasto Fijo") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Descripción") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("Importe (€)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val parsed = amount.replace(",", ".").toDoubleOrNull() ?: 0.0
+                    onConfirm(description, parsed)
+                }
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }

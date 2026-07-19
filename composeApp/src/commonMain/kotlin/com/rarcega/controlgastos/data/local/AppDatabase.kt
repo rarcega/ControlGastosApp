@@ -10,9 +10,10 @@ import androidx.room.RoomDatabaseConstructor
         CategoryEntity::class,
         TransactionEntity::class,
         AccountEntity::class,
-        BudgetEntity::class
+        BudgetEntity::class,
+        MonthlyConfigEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -21,6 +22,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun accountDao(): AccountDao
     abstract fun budgetDao(): BudgetDao
+    abstract fun monthlyConfigDao(): MonthlyConfigDao
 }
 
 // The Room compiler generates the `actual` implementations.

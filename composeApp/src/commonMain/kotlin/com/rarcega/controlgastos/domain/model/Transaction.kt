@@ -11,10 +11,10 @@ enum class TransactionType(val displayName: String) {
     SAVING("Ahorro")
 }
 
-enum class PaymentMethod {
-    CARD,
-    CASH,
-    TRANSFER
+enum class PaymentMethod(val displayName: String) {
+    CARD("Tarjeta"),
+    CASH("Efectivo"),
+    TRANSFER("Transferencia")
 }
 
 @Serializable
